@@ -2,4 +2,4 @@ bot_token.txt
 *.json
 .idea
 .git
-playersheetapi/__pychache__
+*__pycache__

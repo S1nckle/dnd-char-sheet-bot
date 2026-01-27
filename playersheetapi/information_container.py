@@ -5,6 +5,21 @@ class InformationContainer:
         self.__bonds = ''
         self.__flaws = ''
 
+    def to_dict(self):
+        dct = {
+            "personality": self.__personality,
+            "ideals": self.__ideals,
+            "bonds": self.__bonds,
+            "flaws": self.__flaws
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.__personality = dct["personality"]
+        self.__ideals = dct["ideals"]
+        self.__bonds = dct["bonds"]
+        self.__flaws = dct["flaws"]
+
     def get_personality(self) -> str:
         return self.__personality
 

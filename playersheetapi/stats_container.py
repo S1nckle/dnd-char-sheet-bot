@@ -99,6 +99,19 @@ class StatsContainer:
         ]
         return '\n'.join(lines)
 
+    def to_dict(self):
+        dct = {
+            "stats": self.stats.to_dict(),
+            "saving_throws": self.saving_throws.to_dict(),
+            "abilities": self.abilities.to_dict(),
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.stats.from_dict(dct["stats"])
+        self.saving_throws.from_dict(dct["saving_throws"])
+        self.abilities.from_dict(dct["abilities"])
+
     def __ability_mark(self, ability: int) -> str:
         return '●' if self.abilities.get_ability(ability) else '○'
 
@@ -114,6 +127,17 @@ class Stats:
         self.__proficiency = 2
 
         self.__stats = [8] * len(StatsEnum)
+
+    def to_dict(self):
+        dct = {
+            "proficiency": self.__proficiency,
+            "stats_list": self.__stats
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.__proficiency = dct["proficiency"]
+        self.__stats = dct["stats_list"]
 
     def get_stat(self, stat: int) -> int:
         if stat in range(len(self.__stats)):
@@ -159,6 +183,11 @@ class SavingThrows:
     def __init__(self):
         self.__saving_throws = [False] * len(StatsEnum)
 
+    def to_dict(self):
+        return self.__saving_throws
+
+    def from_dict(self, dct: dict):
+        self.__saving_throws = dct
 
     def get_saving_throw(self, stat: int) -> bool:
         if stat in range(len(self.__saving_throws)):
@@ -176,6 +205,12 @@ class SavingThrows:
 class Abilities:
     def __init__(self):
         self.__competencies = [False] * len(AbilitiesEnum)
+
+    def to_dict(self):
+        return self.__competencies
+
+    def from_dict(self, dct: dict):
+        self.__competencies = dct
 
     def get_ability(self, ability: int) -> bool:
         if ability in range(len(self.__competencies)):

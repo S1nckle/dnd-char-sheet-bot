@@ -13,6 +13,26 @@ class AttackType:
         return '      '.join((f'{self.__name}', f'{self.__hit:+}', f'{self.__dmg_count}{self.__dmg_dice}',
                               f'{self.__dmg_type}'))
 
+    def to_dict(self):
+        dct = {
+            "name": self.__name,
+            "hit": self.__hit,
+            "dmg_count": self.__dmg_count,
+            "dmg_dice": self.__dmg_dice.sides(),
+            "dmg_type": self.__dmg_type
+        }
+        return dct
+
+    @staticmethod
+    def from_dict(dct: dict):
+        name = dct["name"]
+        hit = dct["hit"]
+        dmg_count = dct["dmg_count"]
+        dmg_dice = dct["dmg_dice"]
+        dmg_type = dct["dmg_type"]
+        return AttackType(name, hit, dmg_count, dmg_dice, dmg_type)
+
+
 
 class AttacksContainer:
     def __init__(self):
@@ -20,6 +40,13 @@ class AttacksContainer:
 
     def __str__(self):
         return ' Атаки '.center(50, '=') + '\n' + '\n'.join([str(item) for item in self.__attacks])
+
+    def to_dict(self):
+        return [attack.to_dict() for attack in self.__attacks]
+
+    def from_dict(self, dct: dict):
+        for attack in dct:
+            self.add_attack(AttackType.from_dict(dct[attack]))
 
     def get_attacks(self):
         return self.__attacks

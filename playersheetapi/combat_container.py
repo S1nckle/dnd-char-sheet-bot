@@ -1,5 +1,6 @@
 from .dice import Dice
 
+
 class DeathSaves:
     def __init__(self):
         self.__successes = [False, False, False]
@@ -7,7 +8,19 @@ class DeathSaves:
 
     def __str__(self):
         return 'Броски против смерти: '.center(50) + '\n' + \
-            ('Успехи: ' + ' '.join(['●' if i else '○' for i in self.__successes]) + '\tНеудачи: ' + ' '.join(['●' if i else '○' for i in self.__failures])).center(50)
+            ('Успехи: ' + ' '.join(['●' if i else '○' for i in self.__successes]) + '\tНеудачи: ' + ' '.join(
+                ['●' if i else '○' for i in self.__failures])).center(50)
+
+    def to_dict(self):
+        dct = {
+            "successes": self.__successes,
+            "failures": self.__failures
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.__successes = dct["successes"]
+        self.__failures = dct["failures"]
 
 
 class CombatContainer:
@@ -20,7 +33,7 @@ class CombatContainer:
         self.__hitpoints = 0
         self.__temporary_hitpoints = 0
         self.__hitdice = Dice(0)
-        self.__hitdice_max_count = 0
+        self.__hitdice_count_max = 0
         self.__hitdice_count = 0
 
         self.__death_saves = DeathSaves()
@@ -36,6 +49,36 @@ class CombatContainer:
         ]
 
         return '\n'.join(lines)
+
+    def to_dict(self):
+        dct = {
+            "armor_class": self.__armor_class,
+            "initiative": self.__initiative,
+            "speed": self.__speed,
+
+            "hitpoints_max": self.__hitpoints_max,
+            "hitpoints": self.__hitpoints,
+            "temporary_hitpoints": self.__temporary_hitpoints,
+            "hitdice": self.__hitdice.sides(),
+            "hitdice_count_max": self.__hitdice_count_max,
+            "hitdice_count": self.__hitdice_count,
+            "death_saves": self.__death_saves.to_dict()
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.__armor_class = dct["armor_class"]
+        self.__initiative = dct["initiative"]
+        self.__speed = dct["speed"]
+
+        self.__hitpoints_max = dct["hitpoints_max"]
+        self.__hitpoints = dct["hitpoints"]
+        self.__temporary_hitpoints = dct["temporary_hitpoints"]
+
+        self.__hitdice = Dice(dct["hitdice"])
+        self.__hitdice_count = dct["hitdice_count"]
+        self.__hitdice_count_max = dct["hitdice_count_max"]
+        self.__death_saves.from_dict(dct["death_saves"])
 
     def get_armor_class(self) -> int:
         return self.__armor_class
@@ -101,4 +144,3 @@ class CombatContainer:
         if count <= 0:
             raise ValueError(count)
         self.__hitdice_count = count
-

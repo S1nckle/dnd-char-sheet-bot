@@ -6,7 +6,7 @@ class HeaderContainer:
         self.__background = ''
         self.__player_name = ''
         self.__race = ''
-        self.__allignment = ''
+        self.__alignment = ''
         self.__exp = 0
 
     def __str__(self):
@@ -15,10 +15,35 @@ class HeaderContainer:
             self.get_char_name() + (50 - len(self.get_char_name()) - len(str(self.get_exp()))) * ' ' + f'{self.get_exp()}',
             'Классы:        ' + ', '.join(f'{self.__class[i]} - {self.__level[i]}' for i in range(len(self.__class))),
             'Имя игрока:    ' + self.get_player_name(),
+            'Раса           ' + self.get_race(),
             'Происхождение: ' + self.get_background(),
             'Мировоззрение: ' + self.get_allignment(),
         ]
         return '\n'.join(lines)
+
+    def to_dict(self):
+        dct = {
+            "char_name": self.__char_name,
+            "class": self.__class,
+            "level": self.__level,
+            "background": self.__background,
+            "player_name": self.__player_name,
+            "race": self.__race,
+            "alignment": self.__alignment,
+            "experience": self.__exp
+        }
+        return dct
+
+    def from_dict(self, dct: dict):
+        self.__char_name = dct["char_name"]
+        self.__class = dct["class"]
+        self.__level = dct["level"]
+        self.__background = dct["background"]
+        self.__player_name = dct["player_name"]
+        self.__race = dct["race"]
+        self.__alignment = dct["alignment"]
+        self.__exp = dct["experience"]
+
 
     def get_char_name(self):
         return self.__char_name
@@ -27,6 +52,8 @@ class HeaderContainer:
         self.__char_name = name
 
     def get_class(self, number: int):
+        if len(self.__class) == 0:
+            return None
         if number in range(len(self.__class)):
             return self.__class[number]
         else:
@@ -82,10 +109,10 @@ class HeaderContainer:
         self.__race = value
 
     def get_allignment(self) -> str:
-        return self.__allignment
+        return self.__alignment
 
     def set_allignment(self, value: str):
-        self.__allignment = value
+        self.__alignment = value
 
     def get_exp(self) -> int:
         return self.__exp

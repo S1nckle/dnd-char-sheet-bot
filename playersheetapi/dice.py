@@ -2,6 +2,8 @@ class Dice:
     def __init__(self, sides: int):
         self.__sides = sides
 
+    def sides(self):
+        return self.__sides
     def throw(self) -> int:
         from random import randint
         return randint(1, self.__sides + 1)
