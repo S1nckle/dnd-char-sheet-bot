@@ -15,9 +15,9 @@ class HeaderContainer:
             self.get_char_name() + (50 - len(self.get_char_name()) - len(str(self.get_exp()))) * ' ' + f'{self.get_exp()}',
             'Классы:        ' + ', '.join(f'{self.__class[i]} - {self.__level[i]}' for i in range(len(self.__class))),
             'Имя игрока:    ' + self.get_player_name(),
-            'Раса           ' + self.get_race(),
+            'Раса:          ' + self.get_race(),
             'Происхождение: ' + self.get_background(),
-            'Мировоззрение: ' + self.get_allignment(),
+            'Мировоззрение: ' + self.get_alignment(),
         ]
         return '\n'.join(lines)
 
@@ -84,6 +84,14 @@ class HeaderContainer:
         else:
             raise ValueError(number)
 
+    def remove_class(self, number: int):
+        if number in range(len(self.__class)):
+            self.__class.pop(number)
+            self.__level.pop(number)
+        else:
+            raise ValueError(number)
+
+
     def levelup(self, number: int):
         if number in range(len(self.__level)):
             self.__level[number] += 1
@@ -108,10 +116,10 @@ class HeaderContainer:
     def set_race(self, value: str):
         self.__race = value
 
-    def get_allignment(self) -> str:
+    def get_alignment(self) -> str:
         return self.__alignment
 
-    def set_allignment(self, value: str):
+    def set_alignment(self, value: str):
         self.__alignment = value
 
     def get_exp(self) -> int:

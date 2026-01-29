@@ -46,7 +46,7 @@ class AttacksContainer:
 
     def from_dict(self, dct: dict):
         for attack in dct:
-            self.add_attack(AttackType.from_dict(dct[attack]))
+            self.add_attack(AttackType.from_dict(attack))
 
     def get_attacks(self):
         return self.__attacks

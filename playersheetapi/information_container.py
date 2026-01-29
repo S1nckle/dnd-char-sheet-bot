@@ -5,6 +5,20 @@ class InformationContainer:
         self.__bonds = ''
         self.__flaws = ''
 
+    def __str__(self):
+        lines = [
+            ' Информация '.center(50, '='),
+            f'  Личность: ',
+            self.__personality,
+            f'  Идеалы: ',
+            self.__ideals,
+            f'  Связи: ',
+            self.__bonds,
+            f'  Слабости: ',
+            self.__flaws
+        ]
+        return '\n'.join(lines)
+
     def to_dict(self):
         dct = {
             "personality": self.__personality,

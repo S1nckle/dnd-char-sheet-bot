@@ -17,7 +17,8 @@ class CharSheet:
 
     def __str__(self):
         return '\n'.join(str(item) for item in
-                         (self.header_container, self.stats_container, self.combat_container, self.attacks_and_spells))
+                         (self.header_container, self.stats_container, self.combat_container, self.attacks_and_spells,
+                          self.information_container))
 
     def to_dict(self):
         dct = {
@@ -38,14 +39,6 @@ class CharSheet:
         c.combat_container.from_dict(dct["combat"])
         c.attacks_and_spells.from_dict(dct["attacks"])
         return c
-
-    def fill_header(self, ch_name, cls, pl_name, race, bg, algmt):
-        self.header_container.set_char_name(ch_name)
-        self.header_container.add_class(cls)
-        self.header_container.set_player_name(pl_name)
-        self.header_container.set_race(race)
-        self.header_container.set_background(bg)
-        self.header_container.set_allignment(algmt)
 
     def fill_stats(self):
         chars = []
@@ -89,7 +82,7 @@ class SheetsList:
                 self.__picked_sheets__['user'] = {}
         os.remove(path)
 
-    def picked_sheet(self, user: int):
+    def picked_sheet(self, user: int) -> dict:
         '''
         :param user: Users id
         :return: Currently picked sheet by user
@@ -103,6 +96,7 @@ class SheetsList:
         import json
 
         sheets = self.users_sheets(user)
+
         if number in range(len(sheets)):
             path = sheets[number]['path']
             file = open(path, 'r')
@@ -111,6 +105,8 @@ class SheetsList:
                 'path': path,
                 'sheet': sheet
             }
+        else:
+            raise ValueError(number)
 
     def create_sheet(self, user: int, sheet: CharSheet):
         import uuid
@@ -138,6 +134,12 @@ class SheetsList:
 
         with open(file_name, 'w+') as sheet_json:
             json.dump(sheet, sheet_json, default=lambda obj: obj.to_dict(), indent=4)
+
+    def update_name(self, user: int, sheet: CharSheet, path: str):
+        for s in self.__users_sheets__[user]:
+            if s['path'] == path:
+                s['name'] = f'{sheet.header_container.get_char_name()}, {sheet.header_container.get_race()}' + \
+                     f' {sheet.header_container.get_class(0)}'
 
     def on_start(self):
         import os
@@ -167,3 +169,4 @@ class SheetsList:
         for user in self.__picked_sheets__.keys():
             with open(self.__picked_sheets__[user]['path'], 'w') as file:
                 json.dump(self.__picked_sheets__[user]['sheet'], file, default=lambda obj: obj.to_dict(), indent=4)
+            self.update_name(user, self.__picked_sheets__[user])

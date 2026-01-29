@@ -39,10 +39,11 @@ class CombatContainer:
         self.__death_saves = DeathSaves()
 
     def __str__(self):
+        initiative = f'{self.__initiative:+}'
         lines = [
             ' Бой '.center(50, '='),
             f"Класс доспеха:  {self.__armor_class:<8} Текущие хиты:      {self.__hitpoints:<8}",
-            f"Инициатива:     {self.__initiative:<8} Максимальные хиты: {self.__hitpoints_max:<8}",
+            f"Инициатива:     {initiative:<8} Максимальные хиты: {self.__hitpoints_max:<8}",
             f"Скорость:       {self.__speed:<8} Временные хиты:    {self.__temporary_hitpoints:<8}",
             f"               {'':<8}  Кости хитов:       {self.__hitdice_count}{self.__hitdice}",
             str(self.__death_saves)

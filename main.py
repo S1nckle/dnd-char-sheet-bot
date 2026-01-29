@@ -16,20 +16,6 @@ sheet_list.on_start()
 atexit.register(sheet_list.on_close)
 PAGES_DATA = {}
 
-'''
-Callback codes (2-symbol hexadecimal prefixes + optional number):
-    - 00X - pick command
-        000 - pick sheet
-        001 - change page
-        002 - cancel
-    - 01X - delete command
-        010 - ask to delete
-        011 - change page
-        012 - actually delete
-        013 - return to choosing
-        014 - cancel
-'''
-
 
 ### SHEET MANAGING ###
 @bot.message_handler(commands=['start'])
@@ -75,7 +61,7 @@ def show_sheet_page(chat_id: int, user: int, page: int, edit_message=None, callb
     """
         Send message with inline keyboard referring to users sheets, 5 per page
         :param edit_message: Edit message passed via this param instead of sending another
-        :param callback_code: defines which command will catch the callback of keyboard
+        :param callback_code: Defines which command will catch the callback of keyboard
 
     """
     sheets = sheet_list.users_sheets(user)
@@ -131,7 +117,7 @@ def handle_pick(call):
         sheet_list.pick(user, num)
 
         bot.edit_message_text(
-            f'Лист выбран! Можешь открыть его с помощью /show_sheet или изменить с помощью /edit_sheet',
+            f'Лист выбран! Можешь открыть его с помощью /show или изменить с помощью /edit',
             chat_id=call.message.chat.id, message_id=call.message.id)
         bot.answer_callback_query(call.id)
         PAGES_DATA.pop(user)
@@ -201,7 +187,6 @@ def handle_delete(call):
         PAGES_DATA.pop(user)
     elif data.startswith('013'):
         _, user = [int(i) for i in call.data.split(':')]
-        print(PAGES_DATA)
         show_sheet_page(call.message.chat.id, user, PAGES_DATA[user], edit_message=call.message.id, callback_code=1)
     elif data.startswith('014'):
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
@@ -210,15 +195,346 @@ def handle_delete(call):
         bot.answer_callback_query(call.id, 'UNKNOWN COMMAND')
 
 
-## SINGLE SHEET USE ###
+### SINGLE SHEET USE ###
 
-@bot.message_handler(commands=['show_sheet'])
-def show_sheet(message):
+@bot.message_handler(commands=['show'])
+def show(message):
     user = message.from_user.id
     if not sheet_list.picked_sheet(user):
         bot.send_message(message.chat.id,
                          text='У тебя нет выбранного листа!\nВыбери один из своих листов с помощью /pick')
-    bot.send_message(message.chat.id, text=str(sheet_list.picked_sheet(user)['sheet']))
+        return
+    bot.send_message(message.chat.id, text=f"""<pre>{str(sheet_list.picked_sheet(user)['sheet'])}</pre>""",
+                     parse_mode='HTML')
+
+
+@bot.message_handler(commands=['edit'])
+def edit(message):
+    user = message.from_user.id
+    if not sheet_list.picked_sheet(user):
+        bot.send_message(message.chat.id,
+                         text='У тебя нет выбранного листа!\nВыбери один из своих листов с помощью /pick')
+        return
+
+    show_edit_menu(message.chat.id, user)
+
+
+def show_edit_menu(chat_id, user_id, edit_message=None):
+    keyboard = [
+        [InlineKeyboardButton('Шапка', callback_data=f'021:{user_id}:header')],
+        [InlineKeyboardButton('Характеристики', callback_data=f'021:{user_id}:stats')],
+        [InlineKeyboardButton('Боевая информация', callback_data=f'021:{user_id}:combat')],
+        [InlineKeyboardButton('Атаки', callback_data=f'021:{user_id}:attacks')],
+        [InlineKeyboardButton('Информация', callback_data=f'021:{user_id}:info')],
+        [InlineKeyboardButton('Отмена', callback_data=f'020:{user_id}')]
+    ]
+    if edit_message:
+        bot.edit_message_text(chat_id=chat_id, message_id=edit_message, text='Что изменяем?',
+                              reply_markup=InlineKeyboardMarkup(keyboard))
+    else:
+        bot.send_message(chat_id=chat_id, text='Что изменяем?', reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('02'))
+def handle_edit(call):
+    if call.data.startswith('020'):
+        bot.delete_message(call.message.chat.id, call.message.id)
+    elif call.data.startswith('021'):
+        _, user, container = call.data.split(':')
+        user = int(user)
+        match container:
+            case 'header':
+                edit_header(call.message.chat.id, call.message.id, user)
+            case 'stats':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Выбери часть: ',
+                                      reply_markup=InlineKeyboardMarkup([
+                                            [InlineKeyboardButton('Характеристики', callback_data=f'029{user}:stats')],
+                                            [InlineKeyboardButton('Спасброски', callback_data=f'029{user}:savings')],
+                                            [InlineKeyboardButton('Навыки', callback_data=f'029{user}:abilities')],
+                                            [InlineKeyboardButton('Назад', callback_data=f'029{user}:back')],
+                                            [InlineKeyboardButton('Отмена', callback_data=f'020')],
+                                      ]))
+            case 'combat':
+                edit_combat(call.message.chat.id, call.message.id, user)
+            case 'attacks':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Что сделать?',
+                                      reply_markup=(InlineKeyboardMarkup([
+                                          [InlineKeyboardButton('Добавить', callback_data=f'027:{user}:add'),
+                                           InlineKeyboardButton('Удалить', callback_data=f'027:{user}:del')],
+                                          [InlineKeyboardButton('Назад', callback_data=f'027:{user}:back')],
+                                          [InlineKeyboardButton('Отмена', callback_data=f'020')]
+                                      ])))
+            case 'info':
+                edit_info(call.message.chat.id, call.message.id, user)
+    elif call.data.startswith('022'):
+        _, user, field = call.data.split(':')
+        user = int(user)
+        match field:
+            case 'cancel':
+                bot.delete_message(call.message.chat.id, call.message.id)
+            case 'back':
+                show_edit_menu(call.message.chat.id, user, edit_message=call.message.id)
+            case 'class':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Что изменить?',
+                                      reply_markup=InlineKeyboardMarkup(
+                                          [[InlineKeyboardButton('Классы', callback_data=f'023:{user}:class')],
+                                           [InlineKeyboardButton('Уровни', callback_data=f'023:{user}:level')],
+                                           [InlineKeyboardButton('Назад', callback_data=f'021:{user}:header')],
+                                           [InlineKeyboardButton('Отмена', callback_data=f'020')]]
+                                      ))
+            case _:
+                handle_edit_field(call, user, field)
+    elif call.data.startswith('023'):
+        _, user, field = call.data.split(':')
+        user = int(user)
+        if field == 'level':
+            keyboard = []
+            header = sheet_list.picked_sheet(user)['sheet'].header_container
+            for i in range(header.get_class_count()):
+                keyboard.append([InlineKeyboardButton(f'{header.get_class(i)} - {header.get_level(i)}',
+                                                      callback_data=f'026:{user}:{i}')])
+            keyboard.append([InlineKeyboardButton('Назад', callback_data=f'022:{user}:class')])
+            keyboard.append([InlineKeyboardButton('Отмена', callback_data='020')])
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Выбери класс: ',
+                                  reply_markup=InlineKeyboardMarkup(keyboard))
+        elif field == 'class':
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Что сделать?',
+                                  reply_markup=InlineKeyboardMarkup(
+                                      [[InlineKeyboardButton('Добавить', callback_data=f'024:{user}:class:add')],
+                                       [InlineKeyboardButton('Удалить', callback_data=f'024:{user}:class:del')],
+                                       [InlineKeyboardButton('Назад', callback_data=f'022:{user}:class')],
+                                       [InlineKeyboardButton('Отмена', callback_data=f'020')]]
+                                  ))
+    elif call.data.startswith('024'):
+        _, user, field, mode = call.data.split(':')
+        user = int(user)
+        if mode == 'add':
+            handle_edit_field(call, user, field)
+        else:
+            keyboard = []
+            header = sheet_list.picked_sheet(user)['sheet'].header_container
+            for i in range(header.get_class_count()):
+                keyboard.append([InlineKeyboardButton(f'{header.get_class(i)} - {header.get_level(i)}',
+                                                      callback_data=f'025:{user}:{i}')])
+            keyboard.append([InlineKeyboardButton('Назад', callback_data=f'023:{user}:class')])
+            keyboard.append([InlineKeyboardButton('Отмена', callback_data='020')])
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Выбери класс: ',
+                                  reply_markup=InlineKeyboardMarkup(keyboard))
+    elif call.data.startswith('025'):
+        _, user, id = [int(i) for i in call.data.split(':')]
+        sheet_list.picked_sheet(user)['sheet'].header_container.remove_class(id)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Класс удален.')
+    elif call.data.startswith('026'):
+        _, user, id = call.data.split(':')
+        user = int(user)
+        handle_edit_field(call, user, f'level:{id}')
+    elif call.data.startswith('027'):
+        _, user, command = call.data.split(':')
+        user = int(user)
+        if command == 'back':
+            show_edit_menu(call.message.chat.id, user, edit_message=call.message.id)
+        elif command == 'add':
+            bot.send_message(chat_id=call.message.chat.id,
+                             text='Напиши по порядку, разделив пробелами:\n<Название атаки> <Бонус попадания>' +
+                                  ' <Количество> <Кость урона> <Тип урона>\nПробелы в названии замени на нижнее ' +
+                                  'подчеркивание.\n Пример: \n Двуручный_меч +2 2 6 Рубящий')
+            handle_edit_field(call, user, 'attack')
+        elif command == 'del':
+            attacks = sheet_list.picked_sheet(user)['sheet'].attacks_and_spells.get_attacks()
+            keyboard = [[InlineKeyboardButton(text=str(attacks[i]), callback_data=f'028:{user}:{i}')] for i in
+                        range(len(attacks))]
+            keyboard.append([InlineKeyboardButton('Назад', callback_data=f'021:{user}:attacks')])
+            keyboard.append([InlineKeyboardButton('Отмена', callback_data='020')])
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Выбери атаку: ',
+                                  reply_markup=InlineKeyboardMarkup(keyboard))
+    elif call.data.startswith('028'):
+        _, user, i = [int(i) for i in call.data.split(':')]
+        sheet_list.picked_sheet(user)['sheet'].attacks_and_spells.remove_attack(i)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id, text='Атака удалена.')
+    elif call.data.startswith('029'):
+        _, user, field = call.data.split(':')
+        user = int(user)
+
+        if field == 'back':
+            show_edit_menu(chat_id=call.message.chat.id, user_id=user, edit_message=call.message.id)
+        elif field == 'stats':
+            pass
+        elif field == 'savings':
+            pass
+        elif field == 'abilities':
+            edit_abilities()
+
+def edit_header(chat_id, message_id, user_id):
+    keyboard = [
+        [InlineKeyboardButton('Имя персонажа', callback_data=f'022:{user_id}:char_name')],
+        [InlineKeyboardButton('Классы', callback_data=f'022:{user_id}:class')],
+        [InlineKeyboardButton('Имя игрока', callback_data=f'022:{user_id}:player_name')],
+        [InlineKeyboardButton('Раса', callback_data=f'022:{user_id}:race')],
+        [InlineKeyboardButton('Происхождение', callback_data=f'022:{user_id}:background')],
+        [InlineKeyboardButton('Мировоззрение', callback_data=f'022:{user_id}:alignment')],
+        [InlineKeyboardButton('Опыт', callback_data=f'022:{user_id}:exp')],
+        [InlineKeyboardButton('Назад', callback_data=f'022:{user_id}:back')],
+        [InlineKeyboardButton('Отмена', callback_data=f'022:{user_id}:cancel')],
+    ]
+
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='Выбери поле: ',
+                          reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+def edit_combat(chat_id, message_id, user_id):
+    keyboard = [
+        [InlineKeyboardButton('Класс доспеха', callback_data=f'022:{user_id}:ac')],
+        [InlineKeyboardButton('Инициатива', callback_data=f'022:{user_id}:initiative')],
+        [InlineKeyboardButton('Скорость', callback_data=f'022:{user_id}:speed')],
+        [InlineKeyboardButton('Хиты', callback_data=f'022:{user_id}:hitpoints'),
+         InlineKeyboardButton('Макс. хиты', callback_data=f'022:{user_id}:hitpoints_max')],
+        [InlineKeyboardButton('Временные хиты', callback_data=f'022:{user_id}:hitpoints_temp')],
+        [InlineKeyboardButton('Кость хитов', callback_data=f'022:{user_id}:hitdice'),
+         InlineKeyboardButton('Число костей', callback_data=f'022:{user_id}:hitdice_count')]
+    ]
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='Выбери поле: ',
+                          reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+def edit_info(chat_id, message_id, user_id):
+    keyboard = [
+        [InlineKeyboardButton('Личность', callback_data=f'022:{user_id}:personality')],
+        [InlineKeyboardButton('Идеалы', callback_data=f'022:{user_id}:ideals')],
+        [InlineKeyboardButton('Связи', callback_data=f'022:{user_id}:bonds')],
+        [InlineKeyboardButton('Слабости', callback_data=f'022:{user_id}:flaws')],
+        [InlineKeyboardButton('Отмена', callback_data=f'020')],
+    ]
+
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='Выбери поле: ',
+                          reply_markup=InlineKeyboardMarkup(keyboard))
+def edit_abilities(chat_id, message_id, user_id):
+    pass
+
+
+def handle_edit_field(call, user, field):
+    chat_id = call.message.chat.id
+    message_id = call.message.id
+
+    if not hasattr(handle_edit_field, 'waiting_users'):
+        handle_edit_field.waiting_users = {}
+    handle_edit_field.waiting_users[user] = field
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Введи новое значение: ')
+
+
+@bot.message_handler(func=lambda message: True)
+def actually_edit(message):
+    user = message.from_user.id
+
+    if hasattr(handle_edit_field, 'waiting_users') and user in handle_edit_field.waiting_users:
+        field = handle_edit_field.waiting_users[user]
+        del handle_edit_field.waiting_users[user]
+
+        sheet = sheet_list.picked_sheet(user)['sheet']
+
+        match field:
+            case 'char_name':
+                sheet.header_container.set_char_name(message.text)
+            case 'player_name':
+                sheet.header_container.set_player_name(message.text)
+            case 'class':
+                sheet.header_container.add_class(message.text)
+            case 'race':
+                sheet.header_container.set_race(message.text)
+            case 'background':
+                sheet.header_container.set_background(message.text)
+            case 'alignment':
+                sheet.header_container.set_alignment(message.text)
+            case 'exp':
+                if message.text.isdigit():
+                    sheet.header_container.set_exp(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+
+            case 'ac':
+                if message.text.isdigit():
+                    sheet.combat_container.set_armor_class(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'initiative':
+                if message.text.isdigit() or (message.text[0] in '+-' and message.text[1:].isdigit):
+                    sheet.combat_container.set_initiative(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'speed':
+                if message.text.isdigit():
+                    sheet.combat_container.set_speed(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitpoints':
+                if message.text.isdigit():
+                    sheet.combat_container.set_hitpoints(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitpoints_max':
+                if message.text.isdigit():
+                    sheet.combat_container.set_max_hitpoints(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitpoints_temp':
+                if message.text.isdigit():
+                    sheet.combat_container.set_temporary_hitpoints(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitpoints_temp':
+                if message.text.isdigit():
+                    sheet.combat_container.set_temporary_hitpoints(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitdice':
+                if message.text.isdigit():
+                    sheet.combat_container.set_hitdice(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'hitdice_count':
+                if message.text.isdigit():
+                    sheet.combat_container.set_hitdice_count(int(message.text))
+                else:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    return
+            case 'attack':
+                try:
+                    name, hit, hitdice, count, type = message.text.split()
+                    name = name.replace('_', ' ')
+                    hit, hitdice, count = int(hit), int(hitdice), int(count)
+                    a = AttackType(name, hit, hitdice, count, type)
+                    sheet.attacks_and_spells.add_attack(a)
+                except Exception as e:
+                    bot.send_message(message.chat.id, text='Неверное значение.')
+                    print('Не вышло записать новую атаку: ', e)
+                    return
+
+            case 'personality':
+                sheet.information_container.set_personality(message.text)
+            case 'ideals':
+                sheet.information_container.set_ideals(message.text)
+            case 'bonds':
+                sheet.information_container.set_bonds(message.text)
+            case 'flaws':
+                sheet.information_container.set_flaws(message.text)
+
+        # Special fields requiring its own handle
+        if field.startswith('level'):
+            if message.text.isdigit():
+                sheet.header_container.set_level(int(field.split(':')[-1]), int(message.text))
+            else:
+                bot.send_message(message.chat.id, text='Неверное значение.')
+
+        sheet_list.update_name(user, sheet, sheet_list.picked_sheet(user)['path'])
+        bot.send_message(message.chat.id, text='Поле успешно изменено!')
 
 
 if __name__ == '__main__':
