@@ -65,10 +65,10 @@ class StatsContainer:
             str(self.stats),
             ' Спасброски '.center(50, '='),
             f'  {self.__saving_throw_mark(StatsEnum.STRENGTH)}'
-            f'       {self.__saving_throw_mark(StatsEnum.DEXTERITY)}'
+            f'        {self.__saving_throw_mark(StatsEnum.DEXTERITY)}'
             f'        {self.__saving_throw_mark(StatsEnum.CONSTITUTION)}'
             f'        {self.__saving_throw_mark(StatsEnum.INTELLIGENCE)}'
-            f'       {self.__saving_throw_mark(StatsEnum.WISDOM)}'
+            f'        {self.__saving_throw_mark(StatsEnum.WISDOM)}'
             f'        {self.__saving_throw_mark(StatsEnum.CHARISMA)}',
             '   '.join((f'{i:+2d}'.center(6) for i in saving_throws_modifiers)).center(50)[1:],
             ' Навыки '.center(50, '='),
