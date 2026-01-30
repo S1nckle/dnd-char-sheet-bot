@@ -72,9 +72,9 @@ def show_sheet_page(chat_id: int, user: int, page: int, edit_message=None, callb
     sheet_page = sheets[start:end]
 
     keyboard = []
-
+    num = page * 5
     for sheet in sheet_page:
-        num = page * 5
+
         if callback_code == 0:
             callback_data = f'000:{user}:{num}'
         elif callback_code == 1:
@@ -418,7 +418,7 @@ def handle_edit_field(call, user, field):
     if not hasattr(handle_edit_field, 'waiting_users'):
         handle_edit_field.waiting_users = {}
     handle_edit_field.waiting_users[user] = field
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Введи новое значение: ')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Введи новое значение: \n(cancel/отмена чтобы отменить)')
 
 
 @bot.message_handler(func=lambda message: True)
@@ -428,6 +428,10 @@ def actually_edit(message):
     if hasattr(handle_edit_field, 'waiting_users') and user in handle_edit_field.waiting_users:
         field = handle_edit_field.waiting_users[user]
         del handle_edit_field.waiting_users[user]
+
+        if message.text.lower() in ('cancel', 'отмена'):
+            bot.send_message(chat_id=message.chat.id, text='Изменение отменено')
+            return
 
         sheet = sheet_list.picked_sheet(user)['sheet']
 
