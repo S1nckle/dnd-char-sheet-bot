@@ -36,9 +36,12 @@ class AbilitiesDict:
         StatsEnum.STRENGTH: [AbilitiesEnum.ATHLETICS],
         StatsEnum.DEXTERITY: [AbilitiesEnum.ACROBATICS, AbilitiesEnum.SLEIGHT_OF_HAND, AbilitiesEnum.STEALTH],
         StatsEnum.CONSTITUTION: [],
-        StatsEnum.INTELLIGENCE: [AbilitiesEnum.ARCANA, AbilitiesEnum.HISTORY, AbilitiesEnum.INVESTIGATION, AbilitiesEnum.NATURE, AbilitiesEnum.RELIGION],
-        StatsEnum.WISDOM: [AbilitiesEnum.ANIMAL_HANDLING, AbilitiesEnum.INSIGHT, AbilitiesEnum.MEDICINE, AbilitiesEnum.PERCEPTION, AbilitiesEnum.SURVIVAL],
-        StatsEnum.CHARISMA: [AbilitiesEnum.DECEPTION, AbilitiesEnum.INTIMIDATION, AbilitiesEnum.PERFORMANCE, AbilitiesEnum.PERSUASION]
+        StatsEnum.INTELLIGENCE: [AbilitiesEnum.ARCANA, AbilitiesEnum.HISTORY, AbilitiesEnum.INVESTIGATION,
+                                 AbilitiesEnum.NATURE, AbilitiesEnum.RELIGION],
+        StatsEnum.WISDOM: [AbilitiesEnum.ANIMAL_HANDLING, AbilitiesEnum.INSIGHT, AbilitiesEnum.MEDICINE,
+                           AbilitiesEnum.PERCEPTION, AbilitiesEnum.SURVIVAL],
+        StatsEnum.CHARISMA: [AbilitiesEnum.DECEPTION, AbilitiesEnum.INTIMIDATION, AbilitiesEnum.PERFORMANCE,
+                             AbilitiesEnum.PERSUASION]
     }
 
     @staticmethod
@@ -59,7 +62,6 @@ class StatsContainer:
         saving_throws_modifiers = [self.stats.get_modifier(i) for i in self.stats.get_stats()]
         for i in range(len(saving_throws_modifiers)):
             saving_throws_modifiers[i] += self.saving_throws.get_saving_throw(i) * self.stats.get_proficiency()
-
 
         lines = [
             str(self.stats),
@@ -117,9 +119,14 @@ class StatsContainer:
 
     def __saving_throw_mark(self, throw: int) -> str:
         return '●' if self.saving_throws.get_saving_throw(throw) else '○'
+
+    def get_saving_throw_modifier(self, stat: int) -> int:
+        return (self.stats.get_modifier(self.stats.get_stat(stat))
+                + self.stats.get_proficiency() * self.saving_throws.get_saving_throw(stat))
+
     def get_ability_modifier(self, ability: int) -> int:
         return self.abilities.get_ability(ability) * self.stats.get_proficiency() + \
-                    self.stats.get_modifier(self.stats.get_stat(AbilitiesDict.get_stat(ability)))
+            self.stats.get_modifier(self.stats.get_stat(AbilitiesDict.get_stat(ability)))
 
 
 class Stats:
@@ -223,4 +230,3 @@ class Abilities:
             self.__competencies[ability] = value
         else:
             raise ValueError(ability)
-

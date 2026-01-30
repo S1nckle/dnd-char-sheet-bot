@@ -419,65 +419,103 @@ def edit_info(chat_id, message_id, user_id):
     bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='Выбери поле: ',
                           reply_markup=InlineKeyboardMarkup(keyboard))
 
+
 def edit_saving_throws(chat_id, message_id, user_id):
-    throws = sheet_list.picked_sheet(user_id)['sheet'].stats_container.saving_throws
+    stats_container = sheet_list.picked_sheet(user_id)['sheet'].stats_container
+    throws = stats_container.saving_throws
+
     def marker(throw: int) -> str:
         return '● ' if throws.get_saving_throw(throw) else '○ '
+
     keyboard = [
-        [InlineKeyboardButton(f'{marker(StatsEnum.STRENGTH)}Сила', callback_data=f'02b:{user_id}:{StatsEnum.STRENGTH}')],
-        [InlineKeyboardButton(f'{marker(StatsEnum.DEXTERITY)}Ловкость', callback_data=f'02b:{user_id}:{StatsEnum.DEXTERITY}')],
-        [InlineKeyboardButton(f'{marker(StatsEnum.CONSTITUTION)}Телосложение', callback_data=f'02b:{user_id}:{StatsEnum.CONSTITUTION}')],
-        [InlineKeyboardButton(f'{marker(StatsEnum.INTELLIGENCE)}Интеллект', callback_data=f'02b:{user_id}:{StatsEnum.INTELLIGENCE}')],
-        [InlineKeyboardButton(f'{marker(StatsEnum.WISDOM)}Мудрость', callback_data=f'02b:{user_id}:{StatsEnum.WISDOM}')],
-        [InlineKeyboardButton(f'{marker(StatsEnum.CHARISMA)}Харизма', callback_data=f'02b:{user_id}:{StatsEnum.CHARISMA}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.STRENGTH)}Сила '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.STRENGTH):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.STRENGTH}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.DEXTERITY)}Ловкость '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.DEXTERITY):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.DEXTERITY}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.CONSTITUTION)}Телосложение '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.CONSTITUTION):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.CONSTITUTION}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.INTELLIGENCE)}Интеллект '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.INTELLIGENCE):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.INTELLIGENCE}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.WISDOM)}Мудрость '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.WISDOM):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.WISDOM}')],
+        [InlineKeyboardButton(f'{marker(StatsEnum.CHARISMA)}Харизма '
+                              f'({stats_container.get_saving_throw_modifier(StatsEnum.CHARISMA):+})',
+                              callback_data=f'02b:{user_id}:{StatsEnum.CHARISMA}')],
         [InlineKeyboardButton(f'Назад', callback_data=f'021:{user_id}:stats')],
         [InlineKeyboardButton(f'Отмена', callback_data=f'020')],
     ]
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text='Выбери спасбросок, который нужно получить/убрать',
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id,
+                          text='Выбери спасбросок, который нужно получить/убрать',
                           reply_markup=InlineKeyboardMarkup(keyboard))
 
+
 def edit_abilities(chat_id, message_id, user_id):
-    abilities = sheet_list.picked_sheet(user_id)['sheet'].stats_container.abilities
+    stats_container = sheet_list.picked_sheet(user_id)['sheet'].stats_container
+    abilities = stats_container.abilities
 
     def marker(ability: int) -> str:
         return '● ' if abilities.get_ability(ability) else '○ '
 
     keyboard = [
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ATHLETICS)}Атлетика',
-                              callback_data=f'02a:{user_id}:{AbilitiesEnum.ATHLETICS}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ACROBATICS)}Акробатика',
+        [InlineKeyboardButton(
+            f'{marker(AbilitiesEnum.ATHLETICS)}Атлетика ' +
+            f'({stats_container.get_ability_modifier(AbilitiesEnum.ATHLETICS):+})',
+            callback_data=f'02a:{user_id}:{AbilitiesEnum.ATHLETICS}')],
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ACROBATICS)}Акробатика ' +
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.ACROBATICS):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.ACROBATICS}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.SLEIGHT_OF_HAND)}Ловкость рук',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.SLEIGHT_OF_HAND)}Ловкость рук '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.SLEIGHT_OF_HAND):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.SLEIGHT_OF_HAND}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.STEALTH)}Скрытность',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.STEALTH)}Скрытность '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.STEALTH):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.STEALTH}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.INSIGHT)}Анализ',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.INSIGHT)}Анализ '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.INSIGHT):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.INSIGHT}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.HISTORY)}История',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.HISTORY)}История '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.HISTORY):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.HISTORY}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ARCANA)}Магия',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ARCANA)}Магия '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.ARCANA):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.ARCANA}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.NATURE)}Природа',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.NATURE)}Природа '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.NATURE):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.NATURE}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.RELIGION)}Религия',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.RELIGION)}Религия '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.RELIGION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.RELIGION}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.PERCEPTION)}Восприятие',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.PERCEPTION)}Восприятие '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.PERCEPTION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.PERCEPTION}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.SURVIVAL)}Выживание',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.SURVIVAL)}Выживание '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.SURVIVAL):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.SURVIVAL}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.MEDICINE)}Медицина',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.MEDICINE)}Медицина '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.MEDICINE):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.MEDICINE}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.INVESTIGATION)}Проницательность',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.INVESTIGATION)}Проницательность '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.INVESTIGATION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.INVESTIGATION}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ANIMAL_HANDLING)}Уход за животными',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.ANIMAL_HANDLING)}Уход за животными '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.ANIMAL_HANDLING):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.ANIMAL_HANDLING}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.PERFORMANCE)}Выступление',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.PERFORMANCE)}Выступление '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.PERFORMANCE):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.PERFORMANCE}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.INTIMIDATION)}Запугивание',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.INTIMIDATION)}Запугивание '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.INTIMIDATION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.INTIMIDATION}')],
-        [InlineKeyboardButton(f'{marker(AbilitiesEnum.DECEPTION)}Обман',
+        [InlineKeyboardButton(f'{marker(AbilitiesEnum.DECEPTION)}Обман '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.DECEPTION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.DECEPTION}'),
-         InlineKeyboardButton(f'{marker(AbilitiesEnum.PERSUASION)}Убеждение',
+         InlineKeyboardButton(f'{marker(AbilitiesEnum.PERSUASION)}Убеждение '
+                              f'({stats_container.get_ability_modifier(AbilitiesEnum.PERSUASION):+})',
                               callback_data=f'02a:{user_id}:{AbilitiesEnum.PERSUASION}')],
         [InlineKeyboardButton('Назад', callback_data=f'021:{user_id}:stats')],
         [InlineKeyboardButton('Отмена', callback_data=f'020')],
@@ -493,7 +531,8 @@ def handle_edit_field(call, user, field):
     if not hasattr(handle_edit_field, 'waiting_users'):
         handle_edit_field.waiting_users = {}
     handle_edit_field.waiting_users[user] = field
-    bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Введи новое значение: \n(cancel/отмена чтобы отменить)')
+    bot.edit_message_text(chat_id=chat_id, message_id=message_id,
+                          text=f'Введи новое значение: \n(cancel/отмена чтобы отменить)')
 
 
 @bot.message_handler(func=lambda message: True)
