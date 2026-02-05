@@ -5,6 +5,7 @@ from .combat_container import *
 from .header_container import *
 from .information_container import *
 from .stats_container import *
+from .capabilities_container import *
 
 
 class CharSheet:
@@ -14,6 +15,8 @@ class CharSheet:
         self.combat_container = CombatContainer()
         self.information_container = InformationContainer()
         self.attacks_and_spells = AttacksContainer()
+
+        self.profs_and_features = CapabilitiesContainer()
 
     def __str__(self):
         return '\n'.join(str(item) for item in
@@ -26,7 +29,8 @@ class CharSheet:
             "stats": self.stats_container.to_dict(),
             "information": self.information_container.to_dict(),
             "combat": self.combat_container.to_dict(),
-            "attacks": self.attacks_and_spells.to_dict()
+            "attacks": self.attacks_and_spells.to_dict(),
+            "traits": self.profs_and_features.to_dict()
         }
         return dct
 
@@ -38,6 +42,7 @@ class CharSheet:
         c.information_container.from_dict(dct["information"])
         c.combat_container.from_dict(dct["combat"])
         c.attacks_and_spells.from_dict(dct["attacks"])
+        c.profs_and_features.from_dict(dct["traits"])
         return c
 
     def fill_stats(self):
@@ -82,7 +87,7 @@ class SheetsList:
                 self.__picked_sheets__['user'] = {}
         os.remove(path)
 
-    def picked_sheet(self, user: int) -> dict:
+    def picked_sheet(self, user: int) -> dict[str, CharSheet]:
         '''
         :param user: Users id
         :return: Currently picked sheet by user
@@ -169,4 +174,4 @@ class SheetsList:
         for user in self.__picked_sheets__.keys():
             with open(self.__picked_sheets__[user]['path'], 'w') as file:
                 json.dump(self.__picked_sheets__[user]['sheet'], file, default=lambda obj: obj.to_dict(), indent=4)
-            self.update_name(user, self.__picked_sheets__[user])
+            self.update_name(user, *self.__picked_sheets__[user])

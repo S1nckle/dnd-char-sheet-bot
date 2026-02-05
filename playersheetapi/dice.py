@@ -4,9 +4,10 @@ class Dice:
 
     def sides(self):
         return self.__sides
+
     def throw(self) -> int:
         from random import randint
-        return randint(1, self.__sides + 1)
+        return randint(1, self.__sides)
 
     def throw_many(self, count: int) -> int:
         return sum(self.throw() for i in range(count))

@@ -59,7 +59,7 @@ class StatsContainer:
         self.abilities = Abilities()
 
     def __str__(self):
-        saving_throws_modifiers = [self.stats.get_modifier(i) for i in self.stats.get_stats()]
+        saving_throws_modifiers = [self.stats.modifier(i) for i in self.stats.get_stats()]
         for i in range(len(saving_throws_modifiers)):
             saving_throws_modifiers[i] += self.saving_throws.get_saving_throw(i) * self.stats.get_proficiency()
 
@@ -120,24 +120,29 @@ class StatsContainer:
     def __saving_throw_mark(self, throw: int) -> str:
         return '●' if self.saving_throws.get_saving_throw(throw) else '○'
 
+    def get_stat_modifier(self, stat: int) -> int:
+        return self.stats.modifier(self.stats.get_stat(stat))
+
     def get_saving_throw_modifier(self, stat: int) -> int:
-        return (self.stats.get_modifier(self.stats.get_stat(stat))
+        return (self.stats.modifier(self.stats.get_stat(stat))
                 + self.stats.get_proficiency() * self.saving_throws.get_saving_throw(stat))
 
     def get_ability_modifier(self, ability: int) -> int:
         return self.abilities.get_ability(ability) * self.stats.get_proficiency() + \
-            self.stats.get_modifier(self.stats.get_stat(AbilitiesDict.get_stat(ability)))
+            self.stats.modifier(self.stats.get_stat(AbilitiesDict.get_stat(ability)))
 
 
 class Stats:
     def __init__(self):
         self.__proficiency = 2
+        self.__casting_stat = None
 
         self.__stats = [8] * len(StatsEnum)
 
     def to_dict(self):
         dct = {
             "proficiency": self.__proficiency,
+            "casting_stat": self.__casting_stat,
             "stats_list": self.__stats
         }
         return dct
@@ -145,6 +150,8 @@ class Stats:
     def from_dict(self, dct: dict):
         self.__proficiency = dct["proficiency"]
         self.__stats = dct["stats_list"]
+        self.__casting_stat = dct["casting_stat"]
+
 
     def get_stat(self, stat: int) -> int:
         if stat in range(len(self.__stats)):
@@ -167,12 +174,19 @@ class Stats:
     def set_proficiency(self, value):
         self.__proficiency = value
 
-    def get_modifier(self, stat: int) -> int:
+    def modifier(self, stat: int) -> int:
         return (stat - 10) // 2
+
+    def set_casting_stat(self, stat: int):
+        self.__casting_stat = stat
+
+    def get_casting_stat(self):
+        return self.__casting_stat
+
 
     def __str__(self):
         stats = self.get_stats()
-        modifiers = [self.get_modifier(i) for i in self.get_stats()]
+        modifiers = [self.modifier(i) for i in self.get_stats()]
         stat_names = ['СИЛ', 'ЛВК', 'ТЕЛ', 'ИНТ', 'МДР', 'ХАР']
 
         lines = [
@@ -180,7 +194,7 @@ class Stats:
             '   '.join([f'{name:^6}' for name in stat_names]).center(50),
             '   '.join([f'{stat:^6}' for stat in stats]).center(50),
             '   '.join([f'{mod:+2d}'.center(6) for mod in modifiers]).center(50)[1:],
-            f' Бонус владения: {self.get_proficiency()}'.center(50)
+            f' Бонус владения: {self.get_proficiency():+}'.center(50)
         ]
 
         return '\n'.join(lines)
